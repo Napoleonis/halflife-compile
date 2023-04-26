@@ -1,0 +1,42 @@
+name: C/C++ Linux Client & Server
+
+on:
+  workflow_dispatch:
+  #push:
+    #branches: [ master ]
+  #pull_request:
+    #branches: [ master ]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        
+    - name: Install dependencies
+      run: |
+        sudo su -c "echo 'deb http://dk.archive.ubuntu.com/ubuntu/ xenial main' >> /etc/apt/sources.list"
+        sudo su -c "echo 'deb http://dk.archive.ubuntu.com/ubuntu/ xenial universe' >> /etc/apt/sources.list"
+        sudo apt update -y
+        sudo apt-get install make
+        sudo apt install g++-4.8 gcc-4.8 -y
+        sudo apt-get install gcc-4.8-multilib g++-4.8-multilib -y
+        cd $GITHUB_WORKSPACE
+    - name: Build release
+      run: |
+        cd linux && make hl && make make hl_cdll
+        cd $GITHUB_WORKSPACE
+        mkdir linux-build
+        mkdir -p linux-build/cl_dll
+        mkdir -p linux-build/dlls
+        cp -i linux/release/client.so linux-build/cl_dll/client.so
+        cp -i linux/release/hl.so linux-build/dlls/hl.so
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: linux-build
+        path: linux-build/
